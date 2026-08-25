@@ -1,0 +1,14 @@
+*.mp3
+*.npy
+*.csv
+
+.DS_Store
+
+__pycache__/
+*.pyc
+
+models/*.pth
+models/*.pt
+
+.venv
+.vscode
