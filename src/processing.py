@@ -1,8 +1,11 @@
 import librosa
 import numpy as np
 from pathlib import Path
+from src.config_loader import load_config
 
-def is_audible_rms(audio_chunk, threshold=0.01):
+CONFIG = load_config()
+
+def is_audible_rms(audio_chunk, threshold):
     rms_values = librosa.feature.rms(y=audio_chunk)
     mean_rms = np.mean(rms_values)
 
@@ -27,6 +30,13 @@ def process_species_data(file_path ,base_directory=None):
 
     processed_directory.mkdir(parents=True, exist_ok=True)
 
+    # Pull variables from CONFIG dict
+    sr = CONFIG['audio']['sample_rate']
+    chunk_size = CONFIG['audio']['chunk_size_samples']
+    rms_thresh = CONFIG['audio']['rms_threshold']
+    n_mels = CONFIG['audio']['n_mels']
+    fmax = CONFIG['audio']['fmax']
+
     # Loading files through librosa, chunks them
     bird_call_arr = librosa.load(file_path, sr=22050)[0]
     chunk_size = 110250
@@ -38,15 +48,15 @@ def process_species_data(file_path ,base_directory=None):
     num_discarded_chunks = 0
     num_kept_chunks = 0
     for i, bird_call in enumerate(bird_calls):
-        if is_audible_rms(bird_call) == True: # Filters silent chunks out of the dataset
+        if is_audible_rms(bird_call, rms_thresh) == True: # Filters silent chunks out of the dataset
             if len(bird_call) < 110250:
                 padding_needed = 110250 - len(bird_call) # pads last chunk to fit size
                 bird_call = np.pad(bird_call, (0, padding_needed))
 
             mel_spectrogram = librosa.feature.melspectrogram(y=bird_call, 
-                sr=22050, 
-                n_mels=128, 
-                fmax=8000
+                sr=sr, 
+                n_mels=n_mels, 
+                fmax=fmax
             )
             mel_spectrogram_db = librosa.power_to_db(mel_spectrogram, ref=np.max)
             np.save(processed_directory / f"{Path(file_path).stem}_chunk_{i}", mel_spectrogram_db)

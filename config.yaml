@@ -1,0 +1,16 @@
+ingestion:
+  api_key: 'INSERT KEY'
+
+audio:
+  sample_rate: 22050
+  chunk_size_samples: 110250  
+  rms_threshold: 0.01
+  n_mels: 128
+  fmax: 8000
+
+training:
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.01
+  epochs: 10
+  patience: 3

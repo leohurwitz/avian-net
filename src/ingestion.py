@@ -2,16 +2,19 @@ import requests
 import pandas as pd
 import time
 from pathlib import Path
+from src.config_loader import load_config
+
+CONFIG = load_config()
 
 def fetch_bird_metadata(species_name, max_pages=1):
 
     all_recordings=[]
-    
+    api_key = CONFIG['ingestion']['api_key']
     # API is paginated -> allows to loop through set number of pages  
     for page in range(1, max_pages+1):
         params = {
             'query': f'sp:"{species_name}" q:">D" len:"<120"',
-            'key': "INSERT KEY",
+            'key': api_key,
             'page' : page
             }
 

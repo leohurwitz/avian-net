@@ -6,6 +6,9 @@ import numpy as np
 from pathlib import Path
 from sklearn.model_selection import GroupShuffleSplit
 import json
+from src.config_loader import load_config
+
+CONFIG = load_config()
 
 # Defining SpecAugment Transformations Class
 class SpecAugment:
@@ -106,33 +109,10 @@ def get_dataloaders():
         labels=test_labels,     
         species_to_idx_dict=species_to_idx_dict
     )
+    batch_size = CONFIG['training']['batch_size']
 
     # Data Loading
-    train_dataloader = DataLoader(training_data,  batch_size=32, num_workers=4, shuffle=True)
-    test_dataloader = DataLoader(test_data, batch_size=32, num_workers=4)
+    train_dataloader = DataLoader(training_data,  batch_size=batch_size, num_workers=4, shuffle=True)
+    test_dataloader = DataLoader(test_data, batch_size=batch_size, num_workers=4)
 
     return train_dataloader, test_dataloader
-
-if __name__ == "__main__":
-    train_dataloader, test_dataloader = get_dataloaders()
-    print(f"Length of train_dataloader: {len(train_dataloader)} batches of 32")
-    print(f"Length of test_dataloader: {len(test_dataloader)} batches of 32")
-
-# training_data = BirdCallDataset(filepaths=train_paths, 
-#         labels=train_labels, 
-#         species_to_idx_dict=species_to_idx_dict, 
-#         transform=SpecAugment() # Default SpecAug parameters
-#     ) 
-# test_data = BirdCallDataset(filepaths=test_paths, 
-#     labels=test_labels,     
-#     species_to_idx_dict=species_to_idx_dict)
-
-# np.save(Path.cwd() / 'test_arr.npy', training_data[0][0][0].numpy())
-# np.save(Path.cwd() / 'test_arr_1.npy', training_data[100][0][0].numpy())
-# np.save(Path.cwd() / 'test_arr_2.npy', test_data[0][0][0].numpy())
-# np.save(Path.cwd() / 'test_arr_3.npy', training_data[25][0][0].numpy())
-# np.save(Path.cwd() / 'test_arr_4.npy', training_data[132][0][0].numpy())
-# np.save(Path.cwd() / 'test_arr_5.npy', training_data[77][0][0].numpy())
-# np.save(Path.cwd() / 'test_arr_6.npy', training_data[401][0][0].numpy())
-# np.save(Path.cwd() / 'test_arr_7.npy', training_data[1000][0][0].numpy())
-## Tranformation Test Succesful 

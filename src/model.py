@@ -4,7 +4,6 @@ import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-
 # CNN Architecture
 
 class AvianNetModelV1(nn.Module):
@@ -61,26 +60,6 @@ class AvianNetModelV1(nn.Module):
         x = self.classifier(x)
         return x
 
-if __name__ == "__main__":
-    torch.manual_seed(42)
-    device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
-
-    model_v1 = AvianNetModelV1(input_shape=3, 
-                            hidden_units=10,
-                            output_shape=5).to(device)
-
-
-# Our data is [[batch_size],[channels],[height], [width]] --> [[32],[3],[128],[216]]
-
-
-
-# image = torch.from_numpy(np.load(file=Path.cwd() / 'spec_augment_arr_tests' / 'test_arr.npy', allow_pickle=True)).unsqueeze(0).expand(3, -1, -1).unsqueeze(0).to(device)
-# print(f"Test image original shape: {image.shape}")
-
-
-
-# output = model_v1(image)
-# print(output)
 
 
 

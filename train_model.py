@@ -5,6 +5,10 @@ from src.model import AvianNetModelV1
 from src.dataset import get_dataloaders
 from timeit import default_timer as timer
 from pathlib import Path
+from src.config_loader import load_config
+
+CONFIG = load_config()
+
 
 def train_step(model, dataloader, loss_fn, optimizer, device):
     # Batch Loop for a single training epoch
@@ -70,7 +74,6 @@ if __name__ == '__main__':
     torch.manual_seed(42)
     device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
 
-    epochs = 100
     train_dataloader, test_dataloader = get_dataloaders()
 
     # Implementing Class Weights
@@ -84,14 +87,19 @@ if __name__ == '__main__':
     class_weights = total_samples / (num_classes * class_counts)
     class_weights = class_weights.to(device)
 
+    epochs = CONFIG['training']['epochs']
+    lr = CONFIG['training']['learning_rate']
+    weight_decay = CONFIG['training']['weight_decay']
+        
+
     model_v1 = AvianNetModelV1(input_shape=3, 
                                 hidden_units=32,
                                 output_shape=5).to(device)
 
     loss_fn = nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = torch.optim.AdamW(params=model_v1.parameters(), lr=1e-3, weight_decay=1e-2)
+    optimizer = torch.optim.AdamW(params=model_v1.parameters(), lr=lr, weight_decay=weight_decay)
     best_loss = float('inf')
-    patience = 5
+    patience = CONFIG['training']['patience']   
     failure_times = 0
     
     for epoch in tqdm(range(epochs)):
@@ -101,7 +109,7 @@ if __name__ == '__main__':
             print(f"\nTrain loss: {train_loss:.4f} | Test loss: {test_loss:.4f}, Test acc: {test_acc:.4f}")
             if test_loss < best_loss:
                 best_loss = test_loss
-                torch.save(model_v1.state_dict(), Path.cwd() / 'models' / 'class_weights_silencing_model.pth')
+                torch.save(model_v1.state_dict(), Path.cwd() / 'models' / 'avian_net_V1.pth')
                 failure_times = 0
                 print(f"Model Improved: Weights Saved")
             else:
