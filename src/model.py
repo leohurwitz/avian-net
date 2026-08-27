@@ -50,6 +50,7 @@ class AvianNetModelV1(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.Flatten(),
+            nn.Dropout(p=0.5),
             nn.Linear(in_features= hidden_units*32*54,
                       out_features=output_shape)
         )

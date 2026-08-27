@@ -53,7 +53,7 @@ def download_species_data(species_name, base_directory=None):
         base_directory = Path(base_directory)
     
     raw_directory = base_directory / 'raw'
-    folder_name = species_name.replace(" ", "_").capitilize()
+    folder_name = species_name.replace(" ", "_").capitalize()
     species_directory = raw_directory / folder_name
     species_directory.mkdir(parents=True, exist_ok=True)
 
