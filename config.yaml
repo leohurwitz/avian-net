@@ -13,4 +13,6 @@ training:
   learning_rate: 0.001
   weight_decay: 0.01
   epochs: 10
-  patience: 3
+  patience: 5
+  model : 'v2'
+  freeze_weights: True

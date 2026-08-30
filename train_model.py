@@ -1,11 +1,12 @@
 from tqdm.auto import tqdm
 import torch
 import torch.nn as nn
-from src.model import AvianNetModelV1
+from src.model import AvianNetModelV1, AvianNetModelV2
 from src.dataset import get_dataloaders
 from timeit import default_timer as timer
 from pathlib import Path
 from src.config_loader import load_config
+
 
 CONFIG = load_config()
 
@@ -68,15 +69,8 @@ def test_step(model, dataloader, loss_fn, device):
         test_acc = (test_correct / len(dataloader.dataset)) * 100
         return test_loss, test_acc
 
-
-if __name__ == '__main__':
-    start_time = timer()
-    torch.manual_seed(42)
-    device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
-
-    train_dataloader, test_dataloader = get_dataloaders()
-
-    # Implementing Class Weights
+def calculate_class_weights(train_dataloader):
+# Implementing Class Weights
     class_counts = torch.zeros(5)
     for _, y in train_dataloader:
         for label in y:
@@ -84,46 +78,93 @@ if __name__ == '__main__':
 
     total_samples = class_counts.sum()
     num_classes = len(class_counts)
-    class_weights = total_samples / (num_classes * class_counts)
-    class_weights = class_weights.to(device)
+    class_weights = (total_samples / (num_classes * class_counts))
 
-    epochs = CONFIG['training']['epochs']
-    lr = CONFIG['training']['learning_rate']
-    weight_decay = CONFIG['training']['weight_decay']
-        
+    return class_weights
 
-    model_v1 = AvianNetModelV1(input_shape=3, 
-                                hidden_units=32,
-                                output_shape=5).to(device)
-
-    loss_fn = nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = torch.optim.AdamW(params=model_v1.parameters(), lr=lr, weight_decay=weight_decay)
-    best_loss = float('inf')
-    patience = CONFIG['training']['patience']   
-    failure_times = 0
+def initialize_model(device):
+    if CONFIG['training']['model'] == 'v1':
+        # Custom CNN Architecture
+        model = AvianNetModelV1(
+            input_shape=3, 
+            hidden_units=32, 
+            output_shape=5).to(device)
+        return model
     
+    if CONFIG['training']['model'] == 'v2':
+        # Transfer Learning using ResNet18
+        freeze_weights = CONFIG['training']['freeze_weights']
+        model = AvianNetModelV2(num_classes=5, freeze_weights=freeze_weights).to(device)
+        return model
+
+def fit(model, train_dataloader, test_dataloader, loss_fn, optimizer, device, epochs, patience):
+
+    best_loss = float('inf')
+    failure_times = 0
+
+    # Runs Epoch Loop
     for epoch in tqdm(range(epochs)):
+            # Runs Train/Test Loop
             print(f"\nEpoch: {epoch}\n--------")
-            train_loss = train_step(model_v1, train_dataloader, loss_fn, optimizer, device)
-            test_loss, test_acc = test_step(model_v1, test_dataloader, loss_fn, device)
+            train_loss = train_step(model, train_dataloader, loss_fn, optimizer, device)
+            test_loss, test_acc = test_step(model, test_dataloader, loss_fn, device)
             print(f"\nTrain loss: {train_loss:.4f} | Test loss: {test_loss:.4f}, Test acc: {test_acc:.4f}")
+
+            # Checkpoint Model Saving
             if test_loss < best_loss:
                 best_loss = test_loss
-                torch.save(model_v1.state_dict(), Path.cwd() / 'models' / 'avian_net_V1.pth')
+                torch.save(model.state_dict(), Path.cwd() / 'models' / 'avian_net_v2.pth')
                 failure_times = 0
                 print(f"Model Improved: Weights Saved")
-            else:
+            else: # Early Stopping to prevent overfitting
                 failure_times += 1
                 print(f"No Improvement. Patience: {failure_times}/{patience}")
+
                 if failure_times >= patience:
                     print(f"Early Stopping. Validation hasn't improved for {patience} epochs")
                     break
+    
+def main():
+    torch.manual_seed(42)
+    device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
+    print(f"Using device: {device}")
 
-    if device.type == 'mps':
+    # Data Setup
+    train_dataloader, test_dataloader = get_dataloaders()
+
+    class_weights = calculate_class_weights(train_dataloader)
+
+    # Model Setup
+    model = initialize_model(device=device)
+
+    # Loss & Optimizer Setup
+    loss_fn = nn.CrossEntropyLoss(weight=class_weights).to(device)
+    optimizer = torch.optim.AdamW(
+        params=[p for p in model.parameters() if p.requires_grad], 
+        lr=CONFIG['training']['learning_rate'],
+        weight_decay=CONFIG['training']['weight_decay']
+    )
+
+    # Running Model
+    start_time = timer()
+
+    fit(model=model,
+        train_dataloader=train_dataloader,
+        test_dataloader=test_dataloader,
+        loss_fn=loss_fn,
+        optimizer=optimizer,
+        device=device,
+        epochs=CONFIG['training']['epochs'],
+        patience=CONFIG['training']['patience']
+    )
+
+    # Tracks Training Time
+    if device.type == 'mps': 
         torch.mps.synchronize()
         end_time = timer()
         total_train_time = end_time - start_time
         print(f"Train time on {device}: {total_train_time:.2f} seconds")
-
-
-
+    
+    
+if __name__ == '__main__':
+    main()

@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
+from torchvision.models import resnet18, ResNet18_Weights
 
 # CNN Architecture
 
@@ -25,12 +26,12 @@ class AvianNetModelV1(nn.Module):
                       out_channels=hidden_units,
                       kernel_size=3,
                       stride=1,
-                      padding=1), # Maybe I should not pad because the Mel-Spectrograms don't really have much important data around the edges
+                      padding=1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2)
         )
 
-        self.conv_block_2 = nn.Sequential( #unclear if I wanna do another block rn
+        self.conv_block_2 = nn.Sequential(
                     nn.Conv2d(in_channels=hidden_units, # input_shape is 3 as there's 3 color channels
                               out_channels=hidden_units,
                               kernel_size=3,
@@ -60,6 +61,22 @@ class AvianNetModelV1(nn.Module):
         x = self.classifier(x)
         return x
 
+
+class AvianNetModelV2(nn.Module):
+    def __init__(self, num_classes, freeze_weights=True):
+        super().__init__()
+
+        self.backbone = resnet18(weights=ResNet18_Weights.DEFAULT)
+
+        if freeze_weights == True:
+            for param in self.backbone.parameters():
+                    param.requires_grad == False
+
+        in_features = self.backbone.fc.in_features
+        self.backbone.fc = nn.Linear(in_features, num_classes)
+
+    def forward(self, x):
+         return self.backbone(x)
 
 
 
