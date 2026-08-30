@@ -5,14 +5,11 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from torchvision.models import resnet18, ResNet18_Weights
 
-# CNN Architecture
-
+# 3-Layer CNN Architecture
 class AvianNetModelV1(nn.Module):
 
     def __init__(self, input_shape: int, hidden_units: int, output_shape: int):
-        # Input_shape = # of channels (3 in this case as its RGB)
-        # Hidden_units is the in between shape? Like on that one website the number of squares
-        # Output_shape is the number of classes (# of birds)
+        
         super().__init__()
     
         self.conv_block_1 = nn.Sequential(
@@ -61,7 +58,7 @@ class AvianNetModelV1(nn.Module):
         x = self.classifier(x)
         return x
 
-
+# Transfer Learning using ResNet18
 class AvianNetModelV2(nn.Module):
     def __init__(self, num_classes, freeze_weights=True):
         super().__init__()

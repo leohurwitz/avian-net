@@ -15,7 +15,6 @@ def is_audible_rms(audio_chunk, threshold):
         return False
 
 def process_species_data(file_path ,base_directory=None):
-    # File path should be just the species folder + .mp3 name
 
     # Creating Processed File Path
     species_name = Path(file_path).parent.name
@@ -50,7 +49,7 @@ def process_species_data(file_path ,base_directory=None):
     for i, bird_call in enumerate(bird_calls):
         if is_audible_rms(bird_call, rms_thresh) == True: # Filters silent chunks out of the dataset
             if len(bird_call) < 110250:
-                padding_needed = 110250 - len(bird_call) # pads last chunk to fit size
+                padding_needed = 110250 - len(bird_call) # Pads last chunk to fit size
                 bird_call = np.pad(bird_call, (0, padding_needed))
 
             mel_spectrogram = librosa.feature.melspectrogram(y=bird_call, 

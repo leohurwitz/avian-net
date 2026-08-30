@@ -10,7 +10,6 @@ from src.config_loader import load_config
 
 CONFIG = load_config()
 
-
 def train_step(model, dataloader, loss_fn, optimizer, device):
     # Batch Loop for a single training epoch
     model.train()
@@ -34,9 +33,6 @@ def train_step(model, dataloader, loss_fn, optimizer, device):
     
         # Call .step() to adjust those weights
         optimizer.step()
-
-        if batch % 20 == 0:
-            print(f"Looked at {batch * len(X)}/{len(dataloader.dataset)} samples")
 
     # Divide total train loss by length of train dataloader
     train_loss /= len(dataloader)

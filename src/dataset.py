@@ -27,7 +27,7 @@ class SpecAugment:
 
 # PyTorch Dataset Class
 class BirdCallDataset(Dataset):
-    def __init__(self, filepaths, labels, species_to_idx_dict, transform=None): # self is the name we decide for the class instance, filepaths is NumPy array, labels is a list
+    def __init__(self, filepaths, labels, species_to_idx_dict, transform=None):
 
         self.filepaths = filepaths
         self.labels = labels
@@ -46,7 +46,7 @@ class BirdCallDataset(Dataset):
         # Then use np.load(filepath) 
         spectrogram_arr = np.load(file_path)
 
-        # Convert to PyTorch Tensor, Add Channel Dimension, Normalize Tensor Values [[3],[128],[216]]
+        # Convert to PyTorch Tensor, Add Channel Dimension, Normalize Tensor Values, [[3],[128],[216]]
         tensor_data = torch.from_numpy(spectrogram_arr).float().unsqueeze(0)
         std_val, mean_val = torch.std_mean(tensor_data)
         tensor_data = (tensor_data - mean_val) / (std_val + 1e-7)
@@ -72,7 +72,7 @@ labels = [] # Bird Species
 groups = [] # Xeno-Canto IDs
 
 for file_path in all_file_paths: # Creates 2 lists of Species/ID so GroupShuffleSplit can properly split to avoid data leakage
-    species_label = Path(file_path).parent.name ## Path() I believe is obselete as it already should be a path ##
+    species_label = Path(file_path).parent.name
     labels.append(species_label)
 
     xc_id = file_path.name.split('_')[0]
@@ -90,8 +90,6 @@ test_labels = labels[test_idx]
 
 # Create species --> integer dictionary
 unique_species = list(np.unique(labels)) # Identifies/Sorts Species Names
-
-idx_to_species_dict = {index: species for index, species in enumerate(unique_species)}
 species_to_idx_dict = {species: index for index, species in enumerate(unique_species)} 
 
 # Saving Dictionary as JSON File

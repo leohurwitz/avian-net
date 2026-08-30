@@ -3,6 +3,7 @@ import pandas as pd
 import time
 from pathlib import Path
 from src.config_loader import load_config
+from tqdm import tqdm
 
 CONFIG = load_config()
 
@@ -35,7 +36,7 @@ def fetch_bird_metadata(species_name, max_pages=1):
             print(f"Server Response: {response.text}")
             break
 
-    if all_recordings: #  if it is non-empty
+    if all_recordings:
         df = pd.DataFrame(all_recordings)
         df = df[['id', 'en', 'gen', 'sp', 'type', 'q', 'length', 'file']]
         return df
@@ -64,12 +65,12 @@ def download_species_data(species_name, base_directory=None):
     df.to_csv(species_directory / 'metadata.csv')
 
     # Returns tuple in form (id, en, file)
-    for row in df[['id','folder_name','file', 'en']].itertuples(index=False):
+    rows = list(df[['id','folder_name','file', 'en']].itertuples(index=False))
+    for row in tqdm(rows, desc=folder_name, unit='file'):
         save_path = species_directory / f"{row.id}.mp3"
 
         # Checks if path already exists, ie. file has already been downloaded
         if save_path.exists():
-            print(f'MP3 File #{row.id} already downloaded')
             continue
 
         # Downloads file using try/except for errors
@@ -78,7 +79,6 @@ def download_species_data(species_name, base_directory=None):
 
             if response.status_code == 200:
                 save_path.write_bytes(response.content)
-                print(f'MP3 File #{row.id} downloaded successfully')
                 time.sleep(1)
             else:
                 print(f'Failed to download MP3 File #{row.id}')
