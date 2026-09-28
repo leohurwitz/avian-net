@@ -33,19 +33,19 @@ The model pipeline is designed to prevent learning wind patterns and static. The
 ## Model Architectures & Results
 
 The project evaluates three separate neural network strategies to establish a baseline and further performance via Transfer Learning. Additionally, both RMS mean and max filtering methods are tested. Finally, a learning rate scheduler is tested on AvianNet V3 (Transfer Learning + RMS Max), though with little benefit.
-RMS Mean Filtering
+### RMS Mean Filtering
 | Architecture | Strategy | Test Accuracy | Test Loss |
 | :--- | :--- | :--- | :--- |
 | **AvianNet V1** | Custom CNN (3 Conv Layers) | 81.4% | ~0.59 | 
 | **AvianNet V2** | ResNet18 (Frozen Backbone) | 88.0% | ~0.37 | 
 | **AvianNet V3** | ResNet18 (Fine-Tuned) | **89.0%** | **~0.31** |
-RMS Max Filtering
+### RMS Max Filtering
 | Architecture | Strategy | Test Accuracy | Test Loss |
 | :--- | :--- | :--- | :--- |
 | **AvianNet V1** | Custom CNN (3 Conv Layers) | 68% | ~0.93 | 
 | **AvianNet V2** | ResNet18 (Frozen Backbone) | 82% | ~0.60 | 
 | **AvianNet V3** | ResNet18 (Fine-Tuned) | **83%** | **~0.56** |
-RMS Max Filtering with Learning Rate Scheduler
+### RMS Max Filtering with Learning Rate Scheduler
 | Architecture | Strategy | Test Accuracy | Test Loss |
 | :--- | :--- | :--- | :--- |
 | **AvianNet V3** | ResNet18 (Fine-Tuned) | **83%** | **~0.56** |
