@@ -34,11 +34,12 @@ def train_step(model, dataloader, loss_fn, optimizer, device):
         # Call .step() to adjust those weights
         optimizer.step()
 
+
     # Divide total train loss by length of train dataloader
     train_loss /= len(dataloader)
     return train_loss
 
-def test_step(model, dataloader, loss_fn, device):
+def test_step(model, dataloader, loss_fn, scheduler, device):
 
     test_loss, test_acc = 0, 0
     test_correct = 0
@@ -60,6 +61,7 @@ def test_step(model, dataloader, loss_fn, device):
 
         # Calculate test loss avg per batch
         test_loss /= len(dataloader)
+        scheduler.step(test_loss)
 
         # Calculate test accuracy per batch
         test_acc = (test_correct / len(dataloader.dataset)) * 100
@@ -88,12 +90,18 @@ def initialize_model(device):
         return model
     
     if CONFIG['training']['model'] == 'v2':
-        # Transfer Learning using ResNet18
+        # Transfer Learning using ResNet18 (Feature Extraction --> Frozen Weights)
         freeze_weights = CONFIG['training']['freeze_weights']
-        model = AvianNetModelV2(num_classes=5, freeze_weights=freeze_weights).to(device)
+        model = AvianNetModelV2(num_classes=5, freeze_weights=True).to(device)
         return model
 
-def fit(model, train_dataloader, test_dataloader, loss_fn, optimizer, device, epochs, patience):
+    if CONFIG['training']['model'] == 'v3':
+        # Transfer Learning using ResNet18 (Fine-Tuning --> Unfrozen Weights)
+        freeze_weights = CONFIG['training']['freeze_weights']
+        model = AvianNetModelV2(num_classes=5, freeze_weights=False).to(device)
+        return model
+
+def fit(model, train_dataloader, test_dataloader, loss_fn, optimizer, scheduler, device, epochs, patience):
 
     best_loss = float('inf')
     failure_times = 0
@@ -102,19 +110,20 @@ def fit(model, train_dataloader, test_dataloader, loss_fn, optimizer, device, ep
     for epoch in tqdm(range(epochs)):
             # Runs Train/Test Loop
             print(f"\nEpoch: {epoch}\n--------")
+            print(f"Current LR: {optimizer.param_groups[0]['lr']}")
             train_loss = train_step(model, train_dataloader, loss_fn, optimizer, device)
-            test_loss, test_acc = test_step(model, test_dataloader, loss_fn, device)
+            test_loss, test_acc = test_step(model, test_dataloader, loss_fn, scheduler, device)
             print(f"\nTrain loss: {train_loss:.4f} | Test loss: {test_loss:.4f}, Test acc: {test_acc:.4f}")
 
             # Checkpoint Model Saving
             if test_loss < best_loss:
                 best_loss = test_loss
-                torch.save(model.state_dict(), Path.cwd() / 'models' / 'avian_net_v2.pth')
+                torch.save(model.state_dict(), Path.cwd() / 'models' / f'avian_net_{CONFIG['training']['model']}_loss_scheduler.pth')
                 failure_times = 0
-                print(f"Model Improved: Weights Saved")
+                print(f"Model Improved: Weights Saved\n\n\n")
             else: # Early Stopping to prevent overfitting
                 failure_times += 1
-                print(f"No Improvement. Patience: {failure_times}/{patience}")
+                print(f"No Improvement. Patience: {failure_times}/{patience}\n\n\n")
 
                 if failure_times >= patience:
                     print(f"Early Stopping. Validation hasn't improved for {patience} epochs")
@@ -140,6 +149,12 @@ def main():
         lr=CONFIG['training']['learning_rate'],
         weight_decay=CONFIG['training']['weight_decay']
     )
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer=optimizer,
+        mode='min',
+        factor=0.5,
+        patience=2
+    )
 
     # Running Model
     start_time = timer()
@@ -149,6 +164,7 @@ def main():
         test_dataloader=test_dataloader,
         loss_fn=loss_fn,
         optimizer=optimizer,
+        scheduler=scheduler,
         device=device,
         epochs=CONFIG['training']['epochs'],
         patience=CONFIG['training']['patience']
