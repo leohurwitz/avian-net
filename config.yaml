@@ -10,9 +10,17 @@ audio:
 
 training:
   batch_size: 32
-  learning_rate: 0.001
+  learning_rate: 0.0001
   weight_decay: 0.01
   epochs: 10
   patience: 5
-  model : 'v2'
+  model : 'v3'
   freeze_weights: True
+
+  # All models used AdamW optimizer and CrossEntropyLoss
+
+  # V1 (Custom CNN) used 0.001 learning rate, 0.01 decay
+
+  # V2 (ResNet18 Transfer Learning, Frozen) used 0.001 learning rate, 0.01 decay, ResNet18 weights frozen
+
+  # V3 (ResNet18 Transfer Learning, Unfrozen) used 0.0001 learning rate, 0.01 decay, ResNet18 weights unfrozen

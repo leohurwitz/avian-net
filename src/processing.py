@@ -7,14 +7,14 @@ CONFIG = load_config()
 
 def is_audible_rms(audio_chunk, threshold):
     rms_values = librosa.feature.rms(y=audio_chunk)
-    mean_rms = np.mean(rms_values)
+    max_rms = np.max(rms_values)
 
-    if mean_rms > threshold:
+    if max_rms > threshold:
         return True
     else:
         return False
 
-def process_species_data(file_path ,base_directory=None):
+def process_species_data(file_path, base_directory=None):
 
     # Creating Processed File Path
     species_name = Path(file_path).parent.name
