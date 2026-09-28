@@ -21,12 +21,12 @@ This project utilizes both a custom-built Convolutional Neural Network (CNN) and
 The model pipeline is designed to prevent learning wind patterns and static. The general architecture is below.
 
 1. Audio is sourced directly from the public Xeno-Canto API.
-2. 1D waveforms are evaluated for Root Mean Square (RMS) energy. Chunks that fail to cross the mean amplitude threshold (ex: silent pauses) are dropped, filtering out ~40% of the dead space. The data was also similarly filtered for max RMS threshold, filtering out ~14% of the data, far lower than the ~40% of mean RMS. While this reduced the model's performance, it provided a larger, and more diverse dataset that trains a more robust model.
-3.  The surviving 5-second chunks are zero-padded for uniform size and converted into 3-channel, 128-band Mel Spectrograms.
+2. 1D waveforms are evaluated for Root Mean Square (RMS) energy. Chunks that fail to cross the mean amplitude threshold (ex: silent pauses) are dropped, filtering out ~40% of the dead space. The data was also similarly evaluated using a max RMS threshold, filtering out ~14% of the data, far lower than the ~40% of mean RMS. While this reduced the model's performance, it provided a larger and more diverse dataset that trains a more robust model.
+3. The surviving 5-second chunks are zero-padded for uniform size and converted into 3-channel, 128-band Mel Spectrograms.
 
 ### Mitigating Bias and Leakage
 * Train and test splits are separated by the original recording ID. This ensures that sliced chunks from the exact same audio file do not bleed across the train/test boundary. This prevents data leakage.
-* Because hawks produce significantly less  vocalization than the other target species, the RMS filter caused some class imbalance. This was rectified through implementing inverse frequency class weights into the loss function.
+* Because hawks produce significantly less vocalization than the other target species, the RMS filter caused some class imbalance. This was rectified through implementing inverse frequency class weights into the loss function.
 
 ---
 
