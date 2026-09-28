@@ -61,42 +61,40 @@ class BirdCallDataset(Dataset):
         # Return the tensor and its label (tensor_data, tensor_label)
         return (tensor_data, tensor_label)
 
+def get_dataloaders(data_folder='processed'):
+    # Grouping Chunks for Train/Test Split
+    # Create list of all file paths
+    processed_dir = Path.cwd() / 'data' / data_folder # Mean RMS data is saved elsewhere, thus the need for this option
+    all_file_paths = np.fromiter(processed_dir.rglob("*.npy"), dtype=object) # Note this turns the file_paths from Path objects to strings
+
+    labels = [] # Bird Species
+    groups = [] # Xeno-Canto IDs
+
+    for file_path in all_file_paths: # Creates 2 lists of Species/ID so GroupShuffleSplit can properly split to avoid data leakage
+        species_label = Path(file_path).parent.name
+        labels.append(species_label)
+
+        xc_id = file_path.name.split('_')[0]
+        groups.append(xc_id)
+
+    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, train_size=0.8, random_state=42)
+    labels = np.array(labels) # Convert from list to array for indexing
+
+    # Split and filter file paths/labels
+    train_idx, test_idx = next(gss.split(all_file_paths, labels, groups))
+    train_paths = all_file_paths[train_idx]
+    test_paths = all_file_paths[test_idx]
+    train_labels = labels[train_idx]
+    test_labels = labels[test_idx]
+
+    # Create species --> integer dictionary
+    unique_species = list(np.unique(labels)) # Identifies/Sorts Species Names
+    species_to_idx_dict = {species: index for index, species in enumerate(unique_species)} 
+
+    # Saving Dictionary as JSON File
+    with open(Path.cwd() / 'models' / 'species_to_idx_map.json', 'w') as file:
+        json.dump(species_to_idx_dict, file, indent=4)
     
-# Grouping Chunks for Train/Test Split
-
-# Create list of all file paths
-processed_dir = Path.cwd() / 'data' / 'processed'
-all_file_paths = np.fromiter(processed_dir.rglob("*.npy"), dtype=object) # Note this turns the file_paths from Path objects to strings
-
-labels = [] # Bird Species
-groups = [] # Xeno-Canto IDs
-
-for file_path in all_file_paths: # Creates 2 lists of Species/ID so GroupShuffleSplit can properly split to avoid data leakage
-    species_label = Path(file_path).parent.name
-    labels.append(species_label)
-
-    xc_id = file_path.name.split('_')[0]
-    groups.append(xc_id)
-
-gss = GroupShuffleSplit(n_splits=1, test_size=0.2, train_size=0.8, random_state=42)
-labels = np.array(labels) # Convert from list to array for indexing
-
-# Split and filter file paths/labels
-train_idx, test_idx = next(gss.split(all_file_paths, labels, groups))
-train_paths = all_file_paths[train_idx]
-test_paths = all_file_paths[test_idx]
-train_labels = labels[train_idx]
-test_labels = labels[test_idx]
-
-# Create species --> integer dictionary
-unique_species = list(np.unique(labels)) # Identifies/Sorts Species Names
-species_to_idx_dict = {species: index for index, species in enumerate(unique_species)} 
-
-# Saving Dictionary as JSON File
-with open(Path.cwd() / 'models' / 'species_to_idx_map.json', 'w') as file:
-    json.dump(species_to_idx_dict, file, indent=4)
-
-def get_dataloaders():
     # Compiling Pytorch Dataset
     training_data = BirdCallDataset(filepaths=train_paths, 
         labels=train_labels, 
@@ -114,3 +112,6 @@ def get_dataloaders():
     test_dataloader = DataLoader(test_data, batch_size=batch_size, num_workers=4)
 
     return train_dataloader, test_dataloader
+    
+
+
